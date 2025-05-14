@@ -1,0 +1,141 @@
+# BEFORE USE
+# API KEY MUST BE FILLED AT LINE 13
+# MOODLE LOGIN CREDENTIALS MUST BE FILLED AT LINES 61 AND 62
+
+# importing webdriver 
+from selenium import webdriver 
+from selenium.webdriver.common.by import By
+import google.generativeai as genai
+
+import sys
+from math import trunc 
+import re
+import time
+import openai
+openai.api_key = "Your API key"  # <-- Replace with your actual OpenAI API key
+
+# email part 
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
+from email.mime.image import MIMEImage
+
+def send_email(sender_email, sender_password, recipient_email, subject, body, image_path=None):
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = recipient_email
+    msg['Subject'] = subject
+
+    msg.attach(MIMEText(body, 'plain'))
+
+    if image_path:
+        try:
+            with open(image_path, 'rb') as img_file:
+                mime_image = MIMEImage(img_file.read())
+                mime_image.add_header('Content-Disposition', f'attachment; filename="{image_path}")
+                msg.attach(mime_image)
+        except Exception as e:
+            print(f"Error attaching image: {e}")
+
+    try:
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.send_message(msg)
+            print("Email sent successfully!")
+    except Exception as e:
+        print(f"Error occurred: {e}")
+
+def send_test_email():
+    sender_email = 'sender@example.com'
+    sender_password = 'your_app_password'
+    recipient_email = 'recipient@example.com'
+    subject = "Quiz Completed"
+    body = "Hi User,\n\nYour quiz has been successfully completed!\n\nBest regards,\nQUIZWHIZ"
+    image_path = 'table_screenshot.png'
+    send_email(sender_email, sender_password, recipient_email, subject, body, image_path)
+
+def extract_id_of_radio_button(input_string):
+    pattern = r'"([^"]*)"'
+    matches = re.findall(pattern, input_string)
+    print(matches)
+    return matches
+
+def getAns(i):
+    max_attempts = 5
+    API_KEY = 'your_gemini_api_key_here'  # <-- Replace with your actual Gemini API key
+
+    for _ in range(max_attempts):
+        try:
+            driver.implicitly_wait(5)
+            que = (driver.find_elements(By.CLASS_NAME, "qtext")[i].get_attribute("innerHTML")) + \
+                  (driver.find_elements(By.CLASS_NAME, "ablock")[i].get_attribute("innerHTML"))
+            genai.configure(api_key=API_KEY)
+            model = genai.GenerativeModel('gemini-pro')
+            user_input = f"Give id of radio button of correct answer in double quotes:\n" + que
+            response = model.generate_content(user_input)
+            response_text = response.text
+            print("-------------------")
+            answer_id = extract_id_of_radio_button(response_text)
+            print(answer_id)
+            return answer_id
+        except Exception as e:
+            print("Error:", e)
+            print("Waiting....")
+            time.sleep(21)
+            print("Done Waiting")
+    print("Maximum attempts reached, exiting without answer.")
+    return None
+
+# Execution starts here
+ts = time.time() 
+trunc(ts)  
+
+driver = webdriver.Chrome()
+url = "http://moodle.example.com/my/"  # <-- Replace with your Moodle URL
+
+# Opening Moodle Dashboard
+driver.get(url)
+driver.refresh()
+driver.set_window_size(1382, 744)
+
+# Login credentials
+USERNAME = "user@example.com"  # <-- Replace with your Moodle username
+PASSWORD = "your_password_here"  # <-- Replace with your Moodle password
+
+driver.find_element(By.ID, "username").send_keys(USERNAME)
+driver.find_element(By.ID, "password").send_keys(PASSWORD)
+driver.find_element(By.ID, "loginbtn").click()  
+
+driver.implicitly_wait(8)
+quizzes = driver.find_elements(By.LINK_TEXT, "Attempt quiz now")
+if len(quizzes) == 0:
+    print("No ongoing quizzes")
+    driver.quit()
+    sys.exit()
+
+quizzes[0].click()
+driver.find_element(By.XPATH, "//button[@type='submit']").click()
+driver.find_element(By.XPATH, "//input[@value='Start attempt']").click()
+
+while("Attempt summary" not in driver.title):
+    for i in range(len(driver.find_elements(By.CLASS_NAME, "qtext"))):
+        ans = getAns(i)
+        driver.find_element(By.ID, ans[0]).click()
+    if len(driver.find_elements(By.XPATH, "//input[@value='Next page']")) == 0:
+        driver.find_element(By.XPATH, "//input[@name='next']").click()
+    else:
+        driver.find_element(By.XPATH, "//input[@value='Next page']").click()
+
+driver.find_elements(By.XPATH, "//button[@type='submit']")[1].click()
+driver.find_element(By.XPATH, "//input[@value='Submit all and finish']").click()
+driver.find_element(By.LINK_TEXT, "Finish review").click()
+time.sleep(3)
+element = driver.find_element(By.XPATH, '//table[@class="generaltable quizattemptsummary"]')
+element.screenshot('table_screenshot.png')
+print("Screenshot saved as 'table_screenshot.png'!")
+send_test_email()
+print()
+driver.quit()
