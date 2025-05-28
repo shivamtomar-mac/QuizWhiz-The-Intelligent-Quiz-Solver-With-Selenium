@@ -42,3 +42,37 @@ handles each stage of quiz initiation autonomously.
 
               Fig. 5.3 Quiz Start
 
+5.4 Answer Selection Using Generative AI
+
+
+One of QuizWhiz’s core features is its ability to predict correct answers using Google’s Gemini 
+model. For each question, QuizWhiz extracts the text and possible answers, feeding this information 
+to the Gemini AI model, which returns an identifier for the correct answer.
+
+•          System Action: QuizWhiz extracts question and answer options, sends them to the AI model, 
+receives an answer ID, and uses Selenium to select the predicted answer.
+
+•          User  Experience:  Users  benefit  from  highly  accurate  answer  predictions  without
+needing to interact with the quiz interface, making the process significantly faster.
+
+![image](https://github.com/user-attachments/assets/0692b81f-592b-4a07-878a-cb09def109e4)
+
+              Fig. 5.4 AI-Powered Answer Selection Process
+
+5.5 Final Submission
+
+
+Upon reaching the end of the quiz, QuizWhiz reviews the attempt summary and submits the
+quiz. It clicks on the “Submit all and finish” button, confirming that the quiz has been 
+successfully completed.
+
+•          System  Action:  QuizWhiz  automatically  triggers  the  final  submission  actions, 
+confirming the attempt and completing the quiz.
+
+•          User Experience: Users can rest assured that their quiz is fully submitted without any
+manual intervention.
+
+![image](https://github.com/user-attachments/assets/4eb8e458-763a-47de-83e3-794b54f154db)
+
+              Fig. 5.5 Final Submission of Quiz Attempt
+
