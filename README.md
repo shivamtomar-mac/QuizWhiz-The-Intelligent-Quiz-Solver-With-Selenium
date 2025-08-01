@@ -1,5 +1,4 @@
-# QuizWhiz-The-Intelligent-Quiz-Solver-With-Selenium
-
+Smart Quiz Solver using Gemini API
 
 5.1 Login and Initial Navigation
 
